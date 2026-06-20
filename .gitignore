@@ -1,0 +1,13 @@
+forge-installer.jar
+libraries/
+logs/
+crash-reports/
+*.log
+run.sh
+run.bat
+user_jvm_args.txt
+playit-cli
+playitd
+playit.sock
+mc.pid
+world/session.lock
