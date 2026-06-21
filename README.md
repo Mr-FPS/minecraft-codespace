@@ -1,13 +1,13 @@
-# 🎮 Minecraft Fabric Server on GitHub Codespaces
+# 🎮 Minecraft Modded Server on GitHub Codespaces
 
-> Free **modded** Minecraft Java server (Fabric) with a real IP:PORT — no VPS, no credit card.  
+> Free **modded** Minecraft Java server — pick **Fabric**, **Forge**, or **NeoForge** on first run — with a real IP:PORT. No VPS, no credit card.
 > World and mods are version-controlled in this repo, so you can blow away the Codespace anytime and pick up where you left off.
 
 ---
 
 ## ✨ What This Does
 
-- Installs a **Fabric** modded server — Minecraft **26.1.2** by default
+- Lets you choose your mod loader on first start: **Fabric**, **Forge**, or **NeoForge** (Minecraft **26.1.2** by default)
 - Exposes it to the internet via **playit.gg** (real IP:PORT for friends to connect)
 - **Saves your world + mods to this GitHub repo** (manually with `save.sh`, or automatically every 30 min)
 - **Restores everything** on a brand-new Codespace with `import.sh`
@@ -36,7 +36,8 @@ Click **Fork** at the top of this page.
 
 ### Step 3 — Add mods *(optional, before first start)*
 
-Drop any `.jar` mod files into the `mods/` folder. Most mods also need **Fabric API** — download it from [modrinth.com/mod/fabric-api](https://modrinth.com/mod/fabric-api) (pick the build matching Minecraft 26.1.2) and drop it in `mods/` too.
+Drop any `.jar` mod files into the `mods/` folder.
+> ⚠️ Mods must match the loader you'll choose **and** the Minecraft version (26.1.2). A Fabric mod won't load on Forge/NeoForge and vice-versa. Most **Fabric** setups also need **Fabric API** — [modrinth.com/mod/fabric-api](https://modrinth.com/mod/fabric-api).
 
 ### Step 4 — Run the server
 
@@ -44,8 +45,22 @@ Drop any `.jar` mod files into the `mods/` folder. Most mods also need **Fabric 
 bash start.sh
 ```
 
-This automatically:
-- Resolves and downloads the latest Fabric loader for Minecraft 26.1.2
+**On the very first run** it asks which mod loader you want:
+
+```
++----------------------------------------------+
+|   Choose your mod loader (first run)         |
++----------------------------------------------+
+  1) Fabric    - lightweight, fast, most common
+  2) Forge     - largest classic mod ecosystem
+  3) NeoForge  - modern fork of Forge
+
+Enter 1, 2, or 3 [default: 1]:
+```
+
+Type **`1`**, **`2`**, or **`3`** and press Enter. Your choice is saved to a `.loader` file, so **you're never asked again** on future runs. After that the script automatically:
+
+- Resolves and downloads the right loader for Minecraft 26.1.2 (Fabric jar, or runs the Forge/NeoForge `--installServer`)
 - Loads any mods from `mods/`
 - Downloads `playit-cli` + `playitd`
 - Starts the server and waits for it to fully load
@@ -75,7 +90,21 @@ abc123.mc.playit.gg:12345   ← share this with friends
 
 **Multiplayer** → **Add Server** → paste the address → **Join Server**
 
-> ⚠️ Friends need the **same mods installed** in their Minecraft launcher (matching Fabric loader + mod versions) to join a modded server.
+> ⚠️ Friends need the **same loader + same mods** installed in their Minecraft launcher (matching versions) to join a modded server.
+
+---
+
+## 🔀 Switching Mod Loaders
+
+Your loader choice lives in the `.loader` file. To switch (e.g. from Fabric to NeoForge):
+
+```bash
+rm -f .loader fabric-server.jar
+rm -rf libraries run.sh user_jvm_args.txt   # clears any Forge/NeoForge install
+bash start.sh                               # asks you to pick again
+```
+
+> ⚠️ Mods are loader-specific — you'll need to replace the `.jar` files in `mods/` with builds for the new loader.
 
 ---
 
@@ -89,6 +118,7 @@ bash save.sh
 
 This archives `world/` into `world.tar.gz` (keeps the repo fast — a Minecraft world has thousands of tiny files, so it's compressed into one) and commits + pushes:
 - `world.tar.gz`
+- `.loader` *(your chosen mod loader)*
 - `mods/`
 - `server.properties`, `eula.txt`
 - `ops.json`, `whitelist.json`, `banned-players.json`, `banned-ips.json`
@@ -110,13 +140,13 @@ git config user.name "Your Name"
 
 ## 📥 Restoring on a New Codespace
 
-If you delete your Codespace and create a fresh one, the repo (with your saved `world.tar.gz` and `mods/`) is cloned automatically. To unpack everything and check what's there:
+If you delete your Codespace and create a fresh one, the repo (with your saved `world.tar.gz`, `mods/`, and `.loader`) is cloned automatically. To unpack everything and check what's there:
 
 ```bash
 bash import.sh
 ```
 
-Then start the server normally:
+Then start the server normally — it remembers your loader from `.loader`, so no prompt:
 
 ```bash
 bash start.sh
@@ -139,7 +169,7 @@ If you want to start completely clean with **nothing** left in repo history:
 
 ```bash
 git checkout --orphan clean-slate
-git rm -rf world.tar.gz world mods 2>/dev/null
+git rm -rf world.tar.gz world mods .loader 2>/dev/null
 git add .
 git commit -m "Fresh start"
 git branch -D master
@@ -164,6 +194,8 @@ Edit `server.properties`:
 | `pvp` | true | Player vs player combat |
 | `level-seed` | *(empty)* | World generation seed |
 
+> ⚠️ `online-mode=false` lets **anyone** connect with any username (no account check). It's convenient for friends, but consider enabling a whitelist (`whitelist.json`) or setting `online-mode=true` for a public server.
+
 Restart with `bash start.sh` after editing.
 
 ---
@@ -176,10 +208,11 @@ Open `start.sh` and edit the line near the top:
 MC_VERSION="26.1.2"   # ← change this
 ```
 
-Set it to any version Fabric supports (check [fabricmc.net](https://fabricmc.net/)), e.g. `MC_VERSION="1.21.11"`. The script automatically resolves and downloads the latest Fabric loader for whichever version you set. Delete the old server jar first if you're switching versions:
+Set it to any version your chosen loader supports (check [fabricmc.net](https://fabricmc.net/), [files.minecraftforge.net](https://files.minecraftforge.net/), or [neoforged.net](https://neoforged.net/)). The script automatically resolves and downloads the matching loader. Delete the old install first when switching versions:
 
 ```bash
 rm -f fabric-server.jar
+rm -rf libraries run.sh user_jvm_args.txt
 bash start.sh
 ```
 
@@ -191,7 +224,7 @@ bash start.sh
 2. Restart: `bash start.sh`
 3. Save the change: `bash save.sh`
 
-> Make sure mods match your **Fabric Minecraft version** (26.1.2 by default) and are built for **Fabric**, not Forge/NeoForge — they're not interchangeable. [Modrinth](https://modrinth.com) and [CurseForge](https://www.curseforge.com/minecraft/mc-mods) both let you filter by "Fabric" and by version. Almost every modpack needs **Fabric API** installed alongside other mods.
+> Make sure mods match **both** your loader (Fabric / Forge / NeoForge) **and** your Minecraft version (26.1.2 by default) — they're not interchangeable. [Modrinth](https://modrinth.com) and [CurseForge](https://www.curseforge.com/minecraft/mc-mods) let you filter by loader and version. Almost every Fabric pack needs **Fabric API**.
 
 ---
 
@@ -204,7 +237,7 @@ bash start.sh
 | 💾 Data | Saved to GitHub via `save.sh` / auto-save |
 | 🔁 Restart | `bash import.sh` then `bash start.sh` |
 
-> **Stop the Codespace when not playing** to save your free hours:  
+> **Stop the Codespace when not playing** to save your free hours:
 > GitHub → Codespaces → **Stop codespace**
 
 ---
@@ -215,35 +248,44 @@ bash start.sh
 minecraft-codespace/
 ├── .devcontainer/
 │   └── devcontainer.json   ← Java 25 + jq environment
-├── start.sh                ← Installs Fabric, starts server + tunnel + auto-save
-├── save.sh                 ← Archives & pushes world + mods to GitHub
-├── import.sh                ← Restores world + mods on a fresh Codespace
-├── .gitignore               ← Keeps regenerable files out of git
-└── README.md                ← This file
+├── start.sh                ← Picks loader (1st run), installs it, starts server + tunnel + auto-save
+├── save.sh                 ← Archives & pushes world + mods + .loader to GitHub
+├── import.sh               ← Restores world + mods on a fresh Codespace
+├── .gitignore              ← Keeps regenerable files out of git
+└── README.md               ← This file
 ```
 
 *Committed to the repo (your data):*
 ```
-├── world.tar.gz             ← Compressed world save
-├── mods/                    ← Your mod .jar files
+├── world.tar.gz            ← Compressed world save
+├── .loader                 ← Your chosen mod loader (fabric/forge/neoforge)
+├── mods/                   ← Your mod .jar files
 ├── server.properties
 ├── eula.txt
 ```
 
 *Auto-generated locally, not committed (regenerated by start.sh):*
 ```
-├── fabric-server.jar         ← Fabric server executable
-├── .fabric/                  ← Fabric loader cache
+├── fabric-server.jar       ← Fabric server executable (Fabric only)
+├── libraries/ run.sh user_jvm_args.txt   ← Forge/NeoForge server files
+├── .fabric/                ← Fabric loader cache
 ├── logs/
 ├── playit-cli / playitd
-└── world/                    ← Live world (archived into world.tar.gz by save.sh)
+└── world/                  ← Live world (archived into world.tar.gz by save.sh)
 ```
 
 ---
 
 ## 🆘 Troubleshooting
 
-**Java version error?**  
+**Want to switch loaders?**
+```bash
+rm -f .loader fabric-server.jar
+rm -rf libraries run.sh user_jvm_args.txt
+bash start.sh
+```
+
+**Java version error?**
 Rebuild the container: `Ctrl+Shift+P` → `Rebuild Container`
 
 **World locked / session.lock error?**
@@ -255,17 +297,17 @@ kill "$(cat mc.pid)" 2>/dev/null; rm -f world/session.lock; bash start.sh
 ```bash
 pkill -f playit
 export XDG_RUNTIME_DIR=/tmp/playit-run; mkdir -p "$XDG_RUNTIME_DIR"
-./playitd --socket-path=./playit.sock --secret-path=~/.config/playit_gg/playit.toml &
+./playitd --socket-path=./playit.sock --secret-path="$HOME/.config/playit_gg/playit.toml" &
 sleep 3
 ./playit-cli --socket-path=./playit.sock
 ```
 
-**Push failing (file too large)?**  
+**Push failing (file too large)?**
 GitHub rejects files over 100MB. If `world.tar.gz` grows past that, consider [Git LFS](https://git-lfs.com/) for it.
 
-**Server crashes right after adding a mod?**  
-Check `logs/latest.log` — usually means the mod is for a different Minecraft version, or it's a Forge/NeoForge mod instead of a Fabric one, or **Fabric API** is missing from `mods/`.
+**Server crashes right after adding a mod?**
+Check `logs/latest.log` — usually means the mod is for a different Minecraft version, built for the **wrong loader** (e.g. a Forge mod on a Fabric server), or **Fabric API** is missing from `mods/`.
 
 ---
 
-> Free forever · Powered by GitHub Codespaces + Fabric + playit.gg
+> Free forever · Powered by GitHub Codespaces + Fabric / Forge / NeoForge + playit.gg
